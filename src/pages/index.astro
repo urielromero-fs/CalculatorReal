@@ -1,11 +1,1032 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
 <Layout>
-	<Welcome />
+	<!-- Script para confetti -->
+	<script is:inline src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+	<main class="min-h-screen pb-24 relative select-none">
+		<!-- Decoraciones de fondo (Gradientes y Luces de Material Design 3) -->
+		<div class="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+		<div class="absolute bottom-10 right-1/4 w-96 h-96 bg-emerald-700/5 rounded-full blur-[150px] pointer-events-none -z-10"></div>
+
+		<!-- Banner de Estado de Bloqueo / Modo de Vista -->
+		<div id="lock-banner" class="bg-emerald-950/80 border-b border-emerald-500/20 backdrop-blur-md py-2 px-4 sticky top-0 z-40 transition-all duration-300">
+			<div class="max-w-6xl mx-auto flex justify-between items-center text-xs sm:text-sm gap-2">
+				<div class="flex items-center gap-2 text-emerald-400">
+					<span class="flex h-2 w-2 relative">
+						<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+						<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+					</span>
+					<span id="lock-status-text">Visualizando: Solo Lectura</span>
+				</div>
+				<div class="flex items-center gap-2">
+					<button id="btn-unlock-header" class="text-xs px-3 py-1 rounded-full bg-emerald-500 text-emerald-950 font-semibold hover:bg-emerald-400 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer">
+						<!-- Icono de Candado -->
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5" id="lock-icon-btn">
+							<path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 00-10 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+						</svg>
+						<span>Desbloquear Edición</span>
+					</button>
+					<button id="btn-close-banner" class="text-slate-400 hover:text-white transition-colors cursor-pointer p-1 rounded-full hover:bg-white/10" title="Ocultar aviso">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+							<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+						</svg>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Cabecera Principal -->
+		<header class="max-w-6xl mx-auto pt-8 px-4 text-center">
+			<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/50 border border-emerald-800/30 text-emerald-400 text-xs font-semibold mb-4 tracking-wider uppercase">
+				🏝️ Airbnb Splitter MXN
+			</div>
+			<h1 class="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-2">
+				La Renta del <span class="text-emerald-400 bg-clip-text">Airbnb</span>
+			</h1>
+			<p class="text-slate-400 text-sm sm:text-base max-w-md mx-auto">
+				Control de pagos para las 9 personas del viaje. ¡Fácil, rápido y en tiempo real!
+			</p>
+		</header>
+
+		<!-- Pestañas de Navegación Estilo Material Design 3 -->
+		<nav class="max-w-md mx-auto my-8 px-4">
+			<div class="bg-slate-950/80 p-1 rounded-full flex gap-1 border border-emerald-950/40 backdrop-blur-lg shadow-inner">
+				<button data-tab="resumen" class="tab-btn active w-full text-center py-2.5 text-sm font-semibold rounded-full transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer">
+					📊 Resumen
+				</button>
+				<button data-tab="tabla" class="tab-btn w-full text-center py-2.5 text-sm font-semibold rounded-full transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer">
+					👥 Lista
+				</button>
+				<button data-tab="config" class="tab-btn w-full text-center py-2.5 text-sm font-semibold rounded-full transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer">
+					⚙️ Ajustes
+				</button>
+			</div>
+		</nav>
+
+		<!-- Contenido de las Pestañas -->
+		<section class="max-w-6xl mx-auto px-4">
+			
+			<!-- TAB 1: RESUMEN / DASHBOARD -->
+			<div id="tab-resumen" class="tab-content transition-all duration-500 ease-out space-y-6">
+				<!-- Tarjetas de Métricas Rápidas -->
+				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+					<!-- Renta Total -->
+					<div class="bg-slate-900/60 p-6 rounded-[28px] border border-white/5 backdrop-blur-md flex flex-col justify-between shadow-xl">
+						<span class="text-xs font-medium text-slate-400 flex items-center gap-1.5">
+							💰 Renta Total
+						</span>
+						<div class="mt-2">
+							<span id="metric-total-cost" class="text-3xl font-bold text-white">$10,000.00</span>
+							<span class="text-xs font-semibold text-slate-500 ml-1">MXN</span>
+						</div>
+						<div class="text-[11px] text-emerald-400/80 mt-2 flex items-center gap-1">
+							<span>Paga Airbnb:</span>
+							<strong id="metric-payer-name" class="font-semibold text-emerald-300">Cucho</strong>
+						</div>
+					</div>
+
+					<!-- Cuota por Persona -->
+					<div class="bg-slate-900/60 p-6 rounded-[28px] border border-white/5 backdrop-blur-md flex flex-col justify-between shadow-xl">
+						<span class="text-xs font-medium text-slate-400">
+							👥 Cuota Individual
+						</span>
+						<div class="mt-2">
+							<span id="metric-split-cost" class="text-3xl font-bold text-emerald-400">$1,111.11</span>
+							<span class="text-xs font-semibold text-slate-500 ml-1">MXN</span>
+						</div>
+						<div class="text-[11px] text-slate-400 mt-2">
+							Equivalente al <span class="font-bold text-slate-300">11.11%</span> de la renta.
+						</div>
+					</div>
+
+					<!-- Estado de Recaudación -->
+					<div class="bg-slate-900/60 p-6 rounded-[28px] border border-white/5 backdrop-blur-md flex flex-col justify-between shadow-xl">
+						<span class="text-xs font-medium text-slate-400">
+							📈 Recaudado por Depositar
+						</span>
+						<div class="mt-2">
+							<span id="metric-collected" class="text-3xl font-bold text-white">$0.00</span>
+							<span class="text-xs font-semibold text-slate-500 ml-1">MXN</span>
+						</div>
+						<div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+							<span>Restan: <strong id="metric-remaining" class="text-emerald-400">$8,888.89</strong></span>
+							<span id="metric-people-paid-count" class="font-bold text-slate-300">1 de 9 pagados</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Panel Gráfico de Progreso -->
+				<div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+					<!-- Gráfico circular SVG -->
+					<div class="md:col-span-2 bg-slate-900/60 p-8 rounded-[28px] border border-white/5 backdrop-blur-md flex flex-col items-center justify-center text-center shadow-xl relative min-h-[300px]">
+						<div class="relative w-48 h-48 flex items-center justify-center">
+							<!-- Círculo de Fondo -->
+							<svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+								<circle cx="50" cy="50" r="40" stroke="#14281f" stroke-width="10" fill="transparent" />
+								<!-- Círculo de Progreso -->
+								<circle id="progress-circle" cx="50" cy="50" r="40" stroke="#10b981" stroke-width="10" fill="transparent"
+										stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round"
+										class="transition-all duration-1000 ease-out" />
+							</svg>
+							<!-- Texto Central -->
+							<div class="absolute flex flex-col items-center">
+								<span id="progress-percent" class="text-4xl font-bold text-white">0%</span>
+								<span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mt-1">Recaudado</span>
+							</div>
+						</div>
+						<div class="mt-4">
+							<h3 class="text-slate-300 text-sm font-semibold">Progreso de la Renta</h3>
+							<p class="text-xs text-slate-500 mt-1 max-w-[200px]">El objetivo es liquidar la parte correspondiente a los 8 depositantes.</p>
+						</div>
+					</div>
+
+					<!-- Visualización de Estatus Rápido por Persona -->
+					<div class="md:col-span-3 bg-slate-900/60 p-6 rounded-[28px] border border-white/5 backdrop-blur-md flex flex-col justify-between shadow-xl">
+						<div>
+							<h3 class="text-sm font-bold text-slate-200 mb-4 flex items-center gap-1.5">
+								📌 Estatus del Grupo
+							</h3>
+							<div id="grid-mini-status" class="grid grid-cols-3 gap-2">
+								<!-- Cargado dinámicamente -->
+							</div>
+						</div>
+
+						<div class="border-t border-emerald-950/40 pt-4 mt-6">
+							<div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+								<div class="text-xs text-slate-400">
+									🚀 Pídele a tu grupo que deposite a <span id="info-payer-name" class="font-bold text-emerald-400">Cucho</span>.
+								</div>
+								<button id="btn-share-dash" class="w-full sm:w-auto text-xs px-4 py-2 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/20 text-emerald-300 rounded-full font-medium active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+									<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+									</svg>
+									<span>Compartir Enlace</span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- TAB 2: TABLA DE PAGOS -->
+			<div id="tab-tabla" class="tab-content hidden transition-all duration-500 ease-out space-y-4">
+				<div class="bg-slate-900/60 rounded-[28px] border border-white/5 backdrop-blur-md shadow-xl overflow-hidden">
+					<div class="p-6 border-b border-emerald-950/40 flex justify-between items-center flex-wrap gap-2">
+						<div>
+							<h2 class="text-lg font-bold text-white">Detalle de Aportaciones</h2>
+							<p class="text-xs text-slate-400 mt-0.5">Vista general del grupo de 9 viajeros.</p>
+						</div>
+						<div id="table-edit-indicator" class="text-xs text-amber-500 font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 hidden">
+							🔓 Edición Habilitada
+						</div>
+					</div>
+
+					<div class="overflow-x-auto">
+						<table class="w-full text-left text-sm border-collapse">
+							<thead>
+								<tr class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-emerald-950/20 bg-slate-950/40">
+									<th class="py-3.5 px-6">Nombre</th>
+									<th class="py-3.5 px-6">Rol en el Pago</th>
+									<th class="py-3.5 px-6">Aporte Esperado</th>
+									<th class="py-3.5 px-6 text-center">Estado</th>
+									<th class="py-3.5 px-6 text-right" id="th-acciones">Acción</th>
+								</tr>
+							</thead>
+							<tbody id="table-body" class="divide-y divide-emerald-950/20">
+								<!-- Se llena dinámicamente -->
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="text-center text-xs text-slate-500 mt-2">
+					💡 Los cambios se guardan localmente si has desbloqueado con la clave.
+				</div>
+			</div>
+
+			<!-- TAB 3: CONFIGURACIÓN / AJUSTES (LOCK / UNLOCK) -->
+			<div id="tab-config" class="tab-content hidden transition-all duration-500 ease-out max-w-xl mx-auto space-y-6">
+				
+				<!-- TARJETA DE ACCESO CON CONTRASEÑA (SI ESTÁ BLOQUEADO) -->
+				<div id="config-lock-screen" class="bg-slate-900/60 p-8 rounded-[28px] border border-white/5 backdrop-blur-md shadow-xl text-center space-y-4">
+					<div class="mx-auto w-16 h-16 rounded-full bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-8 h-8">
+							<path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 00-10 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<div>
+						<h2 class="text-xl font-bold text-white">Sección Protegida</h2>
+						<p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+							Solo la persona con la clave del viaje puede configurar los datos y registrar pagos.
+						</p>
+					</div>
+					<form id="form-auth" class="space-y-3 max-w-xs mx-auto">
+						<div class="relative">
+							<input type="password" id="input-password" placeholder="Contraseña de edición" 
+								class="w-full bg-slate-950 border border-emerald-900/50 rounded-full py-2.5 pl-4 pr-10 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder-slate-600 transition-all font-semibold" />
+						</div>
+						<button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold py-2.5 rounded-full text-xs uppercase tracking-wider transition-all cursor-pointer">
+							Acceder a Edición
+						</button>
+						<p id="auth-error-msg" class="text-xs text-red-400 font-semibold hidden"></p>
+					</form>
+				</div>
+
+				<!-- CONFIGURACIONES DEL ADMINISTRADOR (SI ESTÁ DESBLOQUEADO) -->
+				<div id="config-admin-panel" class="hidden space-y-6">
+					
+					<!-- Datos Financieros y Organizador -->
+					<div class="bg-slate-900/60 p-6 rounded-[28px] border border-white/5 backdrop-blur-md shadow-xl space-y-4">
+						<h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">🛠️ Parámetros del Airbnb</h2>
+						
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div class="flex flex-col gap-1.5">
+								<label for="input-rent-total" class="text-xs text-slate-400 font-medium">Costo Total Renta ($ MXN)</label>
+								<input type="number" id="input-rent-total" min="1" step="0.01" class="bg-slate-950 border border-emerald-900/40 rounded-2xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold" />
+							</div>
+
+							<div class="flex flex-col gap-1.5">
+								<label for="select-payer" class="text-xs text-slate-400 font-medium">¿Quién pagó el Airbnb entero?</label>
+								<select id="select-payer" class="bg-slate-950 border border-emerald-900/40 rounded-2xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer">
+									<!-- Opciones dinámicas -->
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<!-- Configuración de Integrantes -->
+					<div class="bg-slate-900/60 p-6 rounded-[28px] border border-white/5 backdrop-blur-md shadow-xl space-y-4">
+						<h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">👥 Nombres de los Integrantes</h2>
+						<p class="text-xs text-slate-400">Puedes renombrar a cualquiera de las 9 personas. El cambio se reflejará en toda la app.</p>
+						
+						<div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="container-names-inputs">
+							<!-- Inputs cargados dinámicamente -->
+						</div>
+					</div>
+
+					<!-- Compartir y Guardar -->
+					<div class="bg-slate-900/60 p-6 rounded-[28px] border border-white/5 backdrop-blur-md shadow-xl space-y-4">
+						<h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">🔗 Generar Enlace y Compartir</h2>
+						<p class="text-xs text-slate-400">
+							Una vez que hagas cambios, haz clic abajo para copiar la URL actualizada. Envíala al grupo para que todos vean el estatus de pagos.
+						</p>
+
+						<div class="flex flex-col sm:flex-row gap-3">
+							<button id="btn-share-link" class="w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold py-3 px-6 rounded-full text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10">
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+								</svg>
+								<span>Copiar Enlace de Compartido</span>
+							</button>
+
+							<button id="btn-lock-again" class="w-full sm:w-auto bg-slate-950 hover:bg-slate-800 border border-red-500/30 hover:border-red-500/50 text-red-400 font-bold py-3 px-6 rounded-full text-xs uppercase tracking-wider transition-all cursor-pointer">
+								Cerrar Sesión / Bloquear
+							</button>
+						</div>
+					</div>
+
+					<!-- Restablecer Valores -->
+					<div class="bg-red-950/20 p-6 rounded-[28px] border border-red-950/40 space-y-2">
+						<h3 class="text-sm font-bold text-red-400">⚠️ Zona de Peligro</h3>
+						<p class="text-xs text-slate-400">Si deseas borrar todo el almacenamiento local y regresar a los valores predeterminados de la app:</p>
+						<button id="btn-reset-data" class="text-xs px-4 py-2 rounded-full bg-red-900/20 hover:bg-red-900/40 text-red-300 font-bold transition-all border border-red-500/20 cursor-pointer">
+							Restablecer Datos de Fábrica
+						</button>
+					</div>
+
+				</div>
+
+			</div>
+		</section>
+
+		<!-- Floating Action Button (FAB) para compartir enlace rápido en cualquier pestaña -->
+		<button id="btn-fab-share" class="fixed bottom-6 right-6 p-4 rounded-2xl bg-emerald-500 text-emerald-950 hover:bg-emerald-400 shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all duration-200 z-50 flex items-center justify-center cursor-pointer group" title="Copiar enlace de compartido">
+			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+			</svg>
+			<span class="absolute right-14 bg-slate-950 text-emerald-400 text-xs px-2.5 py-1 rounded-lg border border-emerald-800/40 whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none font-semibold shadow-xl">Copiar Enlace</span>
+		</button>
+
+		<!-- Toast Notification (Material Notification) -->
+		<div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-emerald-500/30 pl-5 pr-4 py-3 rounded-full text-slate-100 text-sm shadow-2xl flex items-center gap-2.5 opacity-0 pointer-events-none translate-y-4 transition-all duration-300 z-50 backdrop-blur-md">
+			<span id="toast-icon" class="text-lg">✅</span>
+			<span id="toast-text" class="font-semibold text-slate-200">Enlace copiado al portapapeles</span>
+			<button id="btn-close-toast" class="ml-2 text-slate-400 hover:text-white transition-colors cursor-pointer p-0.5 rounded-full hover:bg-white/10" title="Cerrar aviso">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+					<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+				</svg>
+			</button>
+		</div>
+
+		<!-- MODAL DE CELEBRACIÓN (META ALCANZADA) -->
+		<div id="celebration-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-500">
+			<div class="bg-gradient-to-br from-[#0e2a1b] to-[#08120c] p-8 rounded-[36px] border border-emerald-400/30 max-w-sm w-full text-center relative shadow-2xl scale-95 transition-all duration-500" id="celebration-card">
+				<!-- Efecto de luz de fondo -->
+				<div class="absolute -top-12 -left-12 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+				<div class="absolute -bottom-12 -right-12 w-24 h-24 bg-emerald-400/20 rounded-full blur-2xl pointer-events-none"></div>
+
+				<div class="w-20 h-20 bg-emerald-500/20 rounded-full mx-auto flex items-center justify-center text-4xl border border-emerald-400/30 animate-bounce">
+					🎉
+				</div>
+				<h2 class="text-2xl font-bold text-white mt-6">¡Meta Cumplida!</h2>
+				<p class="text-emerald-400 font-semibold text-sm mt-1">¡Renta Airbnb 100% pagada!</p>
+				<p class="text-slate-300 text-xs mt-3 leading-relaxed">
+					Todos los integrantes han depositado su parte a <strong id="cel-payer-name" class="text-white font-bold">Cucho</strong>. La cuenta de <strong class="text-emerald-300">$10,000.00 MXN</strong> está liquidada.
+				</p>
+				
+				<div class="mt-6 flex flex-col gap-2">
+					<button id="btn-more-confetti" class="w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold py-3 rounded-full text-xs uppercase tracking-wider transition-all cursor-pointer">
+						💥 ¡Más Confeti!
+					</button>
+					<button id="btn-close-celebration" class="w-full bg-slate-950/50 hover:bg-slate-950 border border-white/5 text-slate-400 hover:text-white py-2.5 rounded-full text-xs transition-all cursor-pointer">
+						Cerrar
+					</button>
+				</div>
+			</div>
+		</div>
+
+	</main>
+
+	<!-- Estilos para pestañas y animaciones -->
+	<style>
+		.tab-btn {
+			background-color: transparent;
+			color: #94a3b8; /* slate-400 */
+		}
+		.tab-btn.active {
+			background-color: #047857; /* emerald-700 */
+			color: #ffffff;
+			box-shadow: 0 4px 12px rgba(4, 120, 87, 0.25);
+		}
+	</style>
+
+	<!-- Script de Lógica Principal -->
+	<script>
+		// Clave de acceso
+		const AUTH_PASSWORD = "Las12rolota";
+
+		// Estado inicial por defecto
+		const defaultState = {
+			rentTotal: 10000,
+			payerIndex: 0, // Índice de 'Cucho' en la lista de personas
+			people: [
+				{ name: "Cucho", paid: true },
+				{ name: "Negro", paid: false },
+				{ name: "Katia", paid: false },
+				{ name: "Charli", paid: false },
+				{ name: "Abel", paid: false },
+				{ name: "Bruno", paid: false },
+				{ name: "Mario", paid: false },
+				{ name: "Luis", paid: false },
+				{ name: "Vic", paid: false }
+			]
+		};
+
+		// Estado actual de la aplicación
+		let state = { ...defaultState };
+		let isLocked = true; // El estado de edición por defecto está bloqueado
+
+		// Elementos del DOM
+		const tabButtons = document.querySelectorAll('nav button[data-tab]');
+		const tabContents = document.querySelectorAll('.tab-content');
+		
+		const lockBanner = document.getElementById('lock-banner');
+		const lockStatusText = document.getElementById('lock-status-text');
+		const btnUnlockHeader = document.getElementById('btn-unlock-header');
+		const lockIconBtn = document.getElementById('lock-icon-btn');
+
+		const configLockScreen = document.getElementById('config-lock-screen');
+		const configAdminPanel = document.getElementById('config-admin-panel');
+		const formAuth = document.getElementById('form-auth');
+		const inputPassword = document.getElementById('input-password');
+		const authErrorMsg = document.getElementById('auth-error-msg');
+
+		// Inputs del Administrador
+		const inputRentTotal = document.getElementById('input-rent-total') as HTMLInputElement;
+		const selectPayer = document.getElementById('select-payer') as HTMLSelectElement;
+		const containerNamesInputs = document.getElementById('container-names-inputs');
+
+		// Métricas del Dashboard
+		const metricTotalCost = document.getElementById('metric-total-cost');
+		const metricPayerName = document.getElementById('metric-payer-name');
+		const metricSplitCost = document.getElementById('metric-split-cost');
+		const metricCollected = document.getElementById('metric-collected');
+		const metricRemaining = document.getElementById('metric-remaining');
+		const metricPeoplePaidCount = document.getElementById('metric-people-paid-count');
+		const infoPayerName = document.getElementById('info-payer-name');
+
+		// SVG Dona Gráfica
+		const progressCircle = document.getElementById('progress-circle');
+		const progressPercent = document.getElementById('progress-percent');
+		const gridMiniStatus = document.getElementById('grid-mini-status');
+
+		// Tabla de pagos
+		const tableBody = document.getElementById('table-body');
+		const tableEditIndicator = document.getElementById('table-edit-indicator');
+
+		// Compartir y Notificaciones
+		const btnShareDash = document.getElementById('btn-share-dash');
+		const btnShareLink = document.getElementById('btn-share-link');
+		const btnFabShare = document.getElementById('btn-fab-share');
+		const btnLockAgain = document.getElementById('btn-lock-again');
+		const btnResetData = document.getElementById('btn-reset-data');
+
+		const toast = document.getElementById('toast');
+		const toastText = document.getElementById('toast-text');
+		const toastIcon = document.getElementById('toast-icon');
+		const btnCloseToast = document.getElementById('btn-close-toast');
+		const btnCloseBanner = document.getElementById('btn-close-banner');
+
+		// Modal Celebración
+		const celebrationModal = document.getElementById('celebration-modal');
+		const celebrationCard = document.getElementById('celebration-card');
+		const btnMoreConfetti = document.getElementById('btn-more-confetti');
+		const btnCloseCelebration = document.getElementById('btn-close-celebration');
+		const celPayerName = document.getElementById('cel-payer-name');
+
+		// Carga inicial al cargar el script
+		init();
+
+		function init() {
+			loadState();
+			setupEventListeners();
+			render();
+			checkLockState();
+		}
+
+		// Configurar los listeners de eventos
+		function setupEventListeners() {
+			// Cambios de pestaña
+			tabButtons.forEach(btn => {
+				btn.addEventListener('click', () => {
+					const tabId = btn.getAttribute('data-tab');
+					switchTab(tabId);
+				});
+			});
+
+			// Formulario de autenticación
+			formAuth.addEventListener('submit', (e) => {
+				e.preventDefault();
+				const pass = inputPassword.value;
+				if (pass === AUTH_PASSWORD) {
+					unlockEdition();
+				} else {
+					authErrorMsg.innerText = "❌ Clave incorrecta. Inténtalo de nuevo.";
+					authErrorMsg.classList.remove('hidden');
+					inputPassword.classList.add('border-red-500');
+					setTimeout(() => {
+						inputPassword.classList.remove('border-red-500');
+					}, 2000);
+				}
+			});
+
+			// Header Unlock Button
+			btnUnlockHeader.addEventListener('click', () => {
+				if (isLocked) {
+					switchTab('config');
+					inputPassword.focus();
+				} else {
+					lockEdition();
+				}
+			});
+
+			// Actualizaciones del panel administrador
+			inputRentTotal.addEventListener('input', () => {
+				if (!isLocked) {
+					state.rentTotal = parseFloat(inputRentTotal.value) || 0;
+					saveStateLocal();
+					render();
+				}
+			});
+
+			selectPayer.addEventListener('change', () => {
+				if (!isLocked) {
+					const prevPayerIdx = state.payerIndex;
+					const newPayerIdx = parseInt(selectPayer.value);
+					
+					// Ajustar los booleanos de pago:
+					// El nuevo pagador se marca automáticamente como pagado
+					state.people[newPayerIdx].paid = true;
+					state.payerIndex = newPayerIdx;
+					
+					saveStateLocal();
+					render();
+				}
+			});
+
+			// Copiar enlace para compartir
+			btnShareDash.addEventListener('click', generateAndCopyShareLink);
+			btnShareLink.addEventListener('click', generateAndCopyShareLink);
+			btnFabShare.addEventListener('click', generateAndCopyShareLink);
+
+			// Cerrar sesión / Bloquear
+			btnLockAgain.addEventListener('click', lockEdition);
+
+			// Cerrar avisos manualmente
+			if (btnCloseToast) {
+				btnCloseToast.addEventListener('click', hideToast);
+			}
+			if (btnCloseBanner) {
+				btnCloseBanner.addEventListener('click', () => {
+					lockBanner.classList.add('opacity-0', 'pointer-events-none', '-translate-y-full');
+				});
+			}
+
+			// Restablecer datos
+			btnResetData.addEventListener('click', () => {
+				if (confirm("¿Seguro que deseas restablecer los datos de fábrica? Esto borrará el almacenamiento de tu navegador.")) {
+					localStorage.removeItem('airbnb_split_state');
+					sessionStorage.removeItem('airbnb_admin_unlocked');
+					window.location.hash = '';
+					state = JSON.parse(JSON.stringify(defaultState));
+					isLocked = true;
+					render();
+					checkLockState();
+					showToast("Datos restablecidos correctamente");
+					switchTab('resumen');
+				}
+			});
+
+			// Celebración
+			btnMoreConfetti.addEventListener('click', triggerGreenConfetti);
+			btnCloseCelebration.addEventListener('click', closeCelebrationModal);
+			celebrationModal.addEventListener('click', (e) => {
+				if (e.target === celebrationModal) {
+					closeCelebrationModal();
+				}
+			});
+		}
+
+		// Cambiar de pestaña con animaciones
+		function switchTab(tabId) {
+			tabButtons.forEach(btn => {
+				if (btn.getAttribute('data-tab') === tabId) {
+					btn.classList.add('active');
+				} else {
+					btn.classList.remove('active');
+				}
+			});
+
+			tabContents.forEach(content => {
+				if (content.id === `tab-${tabId}`) {
+					content.classList.remove('hidden');
+					// Trigger simple animation
+					content.style.opacity = '0';
+					content.style.transform = 'translateY(10px)';
+					setTimeout(() => {
+						content.style.opacity = '1';
+						content.style.transform = 'translateY(0)';
+					}, 50);
+				} else {
+					content.classList.add('hidden');
+				}
+			});
+		}
+
+		// Cargar el estado
+		function loadState() {
+			// 1. Intentar cargar desde URL Hash (compartido)
+			const hash = window.location.hash;
+			if (hash && hash.startsWith('#state=')) {
+				try {
+					const base64Data = hash.substring(7);
+					const decoded = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
+					if (decoded && Array.isArray(decoded.people) && decoded.rentTotal) {
+						state = decoded;
+						isLocked = true; // Siempre bloqueado por defecto si viene de URL
+						return;
+					}
+				} catch (e) {
+					console.error("Error decodificando estado de URL:", e);
+				}
+			}
+
+			// 2. Intentar cargar desde LocalStorage
+			const stored = localStorage.getItem('airbnb_split_state');
+			if (stored) {
+				try {
+					const parsed = JSON.parse(stored);
+					if (parsed && Array.isArray(parsed.people)) {
+						state = parsed;
+						// Comprobar si ya estaba autenticado en la sesión actual
+						const isUnlockedSession = sessionStorage.getItem('airbnb_admin_unlocked') === 'true';
+						isLocked = !isUnlockedSession;
+						return;
+					}
+				} catch (e) {
+					console.error("Error parseando localStorage:", e);
+				}
+			}
+
+			// 3. Estado por defecto
+			state = JSON.parse(JSON.stringify(defaultState));
+			isLocked = true;
+		}
+
+		// Guardar localmente
+		function saveStateLocal() {
+			if (!isLocked) {
+				localStorage.setItem('airbnb_split_state', JSON.stringify(state));
+			}
+		}
+
+		// Bloquear edición
+		function lockEdition() {
+			isLocked = true;
+			sessionStorage.removeItem('airbnb_admin_unlocked');
+			checkLockState();
+			render();
+			showToast("🔒 Edición Bloqueada");
+		}
+
+		// Desbloquear edición
+		function unlockEdition() {
+			isLocked = false;
+			sessionStorage.setItem('airbnb_admin_unlocked', 'true');
+			checkLockState();
+			render();
+			showToast("🔓 Edición Desbloqueada");
+			inputPassword.value = '';
+			authErrorMsg.classList.add('hidden');
+			switchTab('resumen');
+		}
+
+		// Actualizar estado de bloqueo en UI
+		function checkLockState() {
+			if (isLocked) {
+				lockBanner.classList.add('bg-emerald-950/80', 'border-emerald-500/20');
+				lockBanner.classList.remove('bg-emerald-500/20', 'border-emerald-500/40');
+				lockStatusText.innerText = "Visualizando: Solo Lectura";
+				lockStatusText.classList.remove('text-emerald-300');
+				lockStatusText.classList.add('text-emerald-400');
+				
+				btnUnlockHeader.innerHTML = `
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+						<path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 00-10 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+					</svg>
+					<span>Desbloquear</span>
+				`;
+
+				configLockScreen.classList.remove('hidden');
+				configAdminPanel.classList.add('hidden');
+				tableEditIndicator.classList.add('hidden');
+			} else {
+				lockBanner.classList.remove('bg-emerald-950/80', 'border-emerald-500/20');
+				lockBanner.classList.add('bg-emerald-500/10', 'border-emerald-500/30');
+				lockStatusText.innerText = "Modo: Edición Habilitada";
+				lockStatusText.classList.add('text-emerald-300');
+				lockStatusText.classList.remove('text-emerald-400');
+				
+				btnUnlockHeader.innerHTML = `
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 text-emerald-950">
+						<path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+						<path fill-rule="evenodd" d="M.664 9.576a1.5 1.5 0 010-1.152 8.4 8.4 0 0118.672 0 1.5 1.5 0 010 1.152 8.4 8.4 0 01-18.672 0zM10 5a5 5 0 100 10 5 5 0 000-10z" clip-rule="evenodd" />
+					</svg>
+					<span class="text-emerald-950">Bloquear</span>
+				`;
+
+				configLockScreen.classList.add('hidden');
+				configAdminPanel.classList.remove('hidden');
+				tableEditIndicator.classList.remove('hidden');
+			}
+		}
+
+		// Renderizar todos los elementos de la UI a partir del estado
+		function render() {
+			// 1. Cálculos de Dinero
+			const totalCost = state.rentTotal;
+			const totalPeople = state.people.length;
+			const splitCost = totalCost / totalPeople;
+			
+			// Los depositantes son todos excepto el pagador principal
+			const depositorsCount = totalPeople - 1;
+			const totalToCollect = splitCost * depositorsCount;
+			
+			// Calcular cuánto se ha recaudado (excluyendo al pagador principal)
+			let collectedDeposits = 0;
+			let paidPeopleCount = 0; // Cuenta de los que están al corriente (incluyendo al pagador)
+			
+			state.people.forEach((p, index) => {
+				if (index === state.payerIndex) {
+					paidPeopleCount++; // El pagador se considera "pagado" siempre
+				} else {
+					if (p.paid) {
+						collectedDeposits += splitCost;
+						paidPeopleCount++;
+					}
+				}
+			});
+
+			const remainingToCollect = totalToCollect - collectedDeposits;
+			
+			// Porcentaje recaudado total (de los depósitos esperados)
+			const progressPercentage = totalToCollect > 0 ? Math.round((collectedDeposits / totalToCollect) * 100) : 100;
+
+			// 2. Pintar en Métricas
+			metricTotalCost.innerText = formatCurrency(totalCost);
+			metricPayerName.innerText = state.people[state.payerIndex]?.name || 'Nadie';
+			infoPayerName.innerText = state.people[state.payerIndex]?.name || 'Nadie';
+			celPayerName.innerText = state.people[state.payerIndex]?.name || 'Nadie';
+			metricSplitCost.innerText = formatCurrency(splitCost);
+			metricCollected.innerText = formatCurrency(collectedDeposits);
+			metricRemaining.innerText = formatCurrency(remainingToCollect);
+			metricPeoplePaidCount.innerText = `${paidPeopleCount} de ${totalPeople} al corriente`;
+
+			// 3. Pintar Gráfico Circular SVG
+			// Radio = 40, Perímetro = 2 * PI * r = 251.2
+			const strokeDashoffset = 251.2 - (251.2 * progressPercentage) / 100;
+			progressCircle.setAttribute('stroke-dashoffset', strokeDashoffset.toString());
+			progressPercent.innerText = `${progressPercentage}%`;
+
+			// 4. Renderizar Rejilla de Estatus Rápido (Dashboard)
+			gridMiniStatus.innerHTML = '';
+			state.people.forEach((p, index) => {
+				const isPayer = index === state.payerIndex;
+				const statusColor = isPayer 
+					? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+					: (p.paid ? 'bg-emerald-950/60 text-emerald-400 border-emerald-900/40' : 'bg-slate-950/80 text-slate-500 border-slate-900');
+				
+				const badge = isPayer 
+					? '👑 Organiza' 
+					: (p.paid ? '✅ Pagado' : '⏳ Pendiente');
+
+				const div = document.createElement('div');
+				div.className = `p-3 rounded-2xl border ${statusColor} text-center flex flex-col items-center justify-center gap-1 transition-all duration-300 hover:scale-[1.03] shadow-md`;
+				div.innerHTML = `
+					<span class="text-xs font-bold truncate max-w-full block text-white">${p.name}</span>
+					<span class="text-[9px] font-semibold uppercase tracking-wider">${badge}</span>
+				`;
+				gridMiniStatus.appendChild(div);
+			});
+
+			// 5. Renderizar Tabla de Pagos
+			tableBody.innerHTML = '';
+			state.people.forEach((p, index) => {
+				const isPayer = index === state.payerIndex;
+				
+				const tr = document.createElement('tr');
+				tr.className = `hover:bg-emerald-950/10 transition-colors ${isPayer ? 'bg-emerald-950/5' : ''}`;
+				
+				// Nombre
+				const nameCol = `
+					<td class="py-4 px-6 font-semibold text-white flex items-center gap-2">
+						<div class="w-8 h-8 rounded-full bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs uppercase shadow-inner">
+							${p.name.charAt(0)}
+						</div>
+						<span>${p.name}</span>
+					</td>
+				`;
+
+				// Rol
+				const rolBadge = isPayer 
+					? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-emerald-950 flex items-center w-fit gap-1 shadow-sm">👑 Organizador</span>` 
+					: `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 flex items-center w-fit gap-1">Deposita</span>`;
+				const rolCol = `<td class="py-4 px-6">${rolBadge}</td>`;
+
+				// Monto
+				const amountVal = isPayer ? totalCost : splitCost;
+				const amountText = isPayer 
+					? `<div class="text-xs text-slate-400">Total: <strong class="text-white">${formatCurrency(amountVal)}</strong></div>`
+					: `<span class="font-medium text-slate-200">${formatCurrency(amountVal)}</span>`;
+				const amountCol = `<td class="py-4 px-6">${amountText}</td>`;
+
+				// Estatus Badge
+				const statusBadge = isPayer 
+					? `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/40">Pagó a Airbnb</span>`
+					: (p.paid 
+						? `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-900/30 text-emerald-400 border border-emerald-800/30">Transferido</span>` 
+						: `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-950 text-slate-500 border border-slate-900 animate-pulse">Pendiente</span>`);
+				const statusCol = `<td class="py-4 px-6 text-center">${statusBadge}</td>`;
+
+				// Acción (Botón interactivo si no está bloqueado)
+				let actionButton = '';
+				if (isPayer) {
+					actionButton = `<span class="text-xs text-slate-500 font-medium">Receptor de dinero</span>`;
+				} else {
+					if (isLocked) {
+						actionButton = `
+							<button disabled class="px-4 py-1.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed opacity-50">
+								Bloqueado
+							</button>
+						`;
+					} else {
+						actionButton = `
+							<button onclick="togglePersonPaid(${index})" class="px-4 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm ${
+								p.paid 
+									? 'bg-red-950/40 hover:bg-red-950 border border-red-500/30 text-red-300' 
+									: 'bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-semibold'
+							}">
+								${p.paid ? 'Desmarcar' : 'Marcar Pago'}
+							</button>
+						`;
+					}
+				}
+				const actionCol = `<td class="py-4 px-6 text-right">${actionButton}</td>`;
+
+				tr.innerHTML = nameCol + rolCol + amountCol + statusCol + actionCol;
+				tableBody.appendChild(tr);
+			});
+
+			// 6. Actualizar Panel Administrador
+			inputRentTotal.value = state.rentTotal.toString();
+			
+			// Seleccionador de pagador
+			const selectedPayerVal = selectPayer.value;
+			selectPayer.innerHTML = '';
+			state.people.forEach((p, idx) => {
+				const opt = document.createElement('option');
+				opt.value = idx.toString();
+				opt.innerText = p.name;
+				opt.selected = idx === state.payerIndex;
+				selectPayer.appendChild(opt);
+			});
+
+			// Inputs de nombres
+			containerNamesInputs.innerHTML = '';
+			state.people.forEach((p, idx) => {
+				const div = document.createElement('div');
+				div.className = "flex flex-col gap-1";
+				div.innerHTML = `
+					<label class="text-[10px] text-slate-400 font-semibold">Persona ${idx + 1}</label>
+					<input type="text" value="${p.name}" oninput="updatePersonName(${idx}, this.value)" 
+						class="bg-slate-950 border border-emerald-900/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium" />
+				`;
+				containerNamesInputs.appendChild(div);
+			});
+
+			// 7. Lanzar animación si alcanzamos 100% de la meta
+			checkGoalCelebration(paidPeopleCount, totalPeople);
+		}
+
+		// Controladores de acción globales para botones creados dinámicamente en la tabla
+		window.togglePersonPaid = function(idx) {
+			if (isLocked) return;
+			state.people[idx].paid = !state.people[idx].paid;
+			saveStateLocal();
+			render();
+		};
+
+		window.updatePersonName = function(idx, newName) {
+			if (isLocked) return;
+			state.people[idx].name = newName.trim() || `Persona ${idx + 1}`;
+			saveStateLocal();
+			render();
+		};
+
+		// Monitorear si llegamos al 100%
+		let wasCelebrated = false;
+		function checkGoalCelebration(paidCount, totalCount) {
+			// Si todos han pagado
+			if (paidCount === totalCount && totalCount > 0) {
+				// Para evitar disparar la animación en cada recarga de página compartida
+				// usamos sessionStorage para recordar si ya celebramos en esta sesión abierta.
+				const sessionCelebrated = sessionStorage.getItem('airbnb_goal_celebrated') === 'true';
+				
+				if (!wasCelebrated && !sessionCelebrated) {
+					triggerGreenConfetti();
+					openCelebrationModal();
+					sessionStorage.setItem('airbnb_goal_celebrated', 'true');
+					wasCelebrated = true;
+				}
+			} else {
+				// Si retrocedemos, reiniciamos el flag para permitir celebrar de nuevo al completar
+				sessionStorage.removeItem('airbnb_goal_celebrated');
+				wasCelebrated = false;
+			}
+		}
+
+		// Lanzar confeti en tonos verdes y dorados
+		function triggerGreenConfetti() {
+			// Confetti.js se carga en index.astro
+			if (typeof confetti === 'function') {
+				const duration = 3 * 1000;
+				const end = Date.now() + duration;
+
+				const colors = ['#10b981', '#34d399', '#059669', '#a7f3d0', '#fbbf24', '#f59e0b'];
+
+				(function frame() {
+					confetti({
+						particleCount: 3,
+						angle: 60,
+						spread: 55,
+						origin: { x: 0 },
+						colors: colors
+					});
+					confetti({
+						particleCount: 3,
+						angle: 120,
+						spread: 55,
+						origin: { x: 1 },
+						colors: colors
+					});
+
+					if (Date.now() < end) {
+						requestAnimationFrame(frame);
+					}
+				}());
+			}
+		}
+
+		// Modal de Celebración
+		function openCelebrationModal() {
+			celebrationModal.classList.remove('opacity-0', 'pointer-events-none');
+			celebrationCard.classList.remove('scale-95');
+			celebrationCard.classList.add('scale-100');
+		}
+
+		function closeCelebrationModal() {
+			celebrationModal.classList.add('opacity-0', 'pointer-events-none');
+			celebrationCard.classList.remove('scale-100');
+			celebrationCard.classList.add('scale-95');
+		}
+
+		// Generar enlace y copiar
+		function generateAndCopyShareLink() {
+			try {
+				// Codificar estado en Base64
+				const jsonStr = JSON.stringify(state);
+				const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+				
+				// Construir URL con el hash
+				const shareUrl = `${window.location.origin}${window.location.pathname}#state=${b64}`;
+				
+				// Intentar copiar al portapapeles usando Clipboard API
+				if (navigator.clipboard && navigator.clipboard.writeText) {
+					navigator.clipboard.writeText(shareUrl).then(() => {
+						showToast("🔗 ¡Enlace de compartido copiado al portapapeles!");
+					}).catch(err => {
+						console.warn("Fallo Clipboard API, usando fallback:", err);
+						copyFallback(shareUrl);
+					});
+				} else {
+					copyFallback(shareUrl);
+				}
+			} catch (e) {
+				console.error("Error al generar enlace de compartido:", e);
+				showToast("Error al codificar el enlace", true);
+			}
+		}
+
+		// Fallback para copiar en iframes o entornos que bloquean la API del portapapeles
+		function copyFallback(text) {
+			try {
+				const textArea = document.createElement("textarea");
+				textArea.value = text;
+				textArea.style.position = "fixed";
+				textArea.style.opacity = "0";
+				document.body.appendChild(textArea);
+				textArea.focus();
+				textArea.select();
+				const successful = document.execCommand('copy');
+				document.body.removeChild(textArea);
+				if (successful) {
+					showToast("🔗 ¡Enlace copiado al portapapeles!");
+				} else {
+					showToast("No se pudo copiar automáticamente. Copia la URL del navegador.", true);
+				}
+			} catch (err) {
+				console.error('Error en fallback:', err);
+				showToast("No se pudo copiar el enlace", true);
+			}
+		}
+
+		// Mostrar Toast Notificación
+		let toastTimeout;
+		function showToast(message, isError = false) {
+			toastText.innerText = message;
+			if (toastIcon) {
+				toastIcon.innerText = isError ? "❌" : "✅";
+			}
+			
+			if (isError) {
+				toast.classList.remove('border-emerald-500/30');
+				toast.classList.add('border-red-500/30');
+			} else {
+				toast.classList.remove('border-red-500/30');
+				toast.classList.add('border-emerald-500/30');
+			}
+
+			toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+			toast.classList.add('opacity-100', 'translate-y-0');
+			
+			clearTimeout(toastTimeout);
+			toastTimeout = setTimeout(hideToast, 4000);
+		}
+
+		function hideToast() {
+			toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+			toast.classList.remove('opacity-100', 'translate-y-0');
+		}
+
+		// Utilidades de formato
+		function formatCurrency(value) {
+			return new Intl.NumberFormat('es-MX', {
+				style: 'currency',
+				currency: 'MXN'
+			}).format(value);
+		}
+	</script>
 </Layout>
