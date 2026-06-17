@@ -38,6 +38,24 @@ import Layout from '../layouts/Layout.astro';
 			</div>
 		</div>
 
+		<!-- Banner de Importación de Datos -->
+		<div id="import-banner" class="bg-amber-950/90 border-b border-amber-500/20 backdrop-blur-md py-3 px-4 sticky top-0 z-30 transition-all duration-300 hidden">
+			<div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center text-xs sm:text-sm gap-3">
+				<div class="flex items-center gap-2 text-amber-400 text-center sm:text-left">
+					<span class="text-lg">📬</span>
+					<span>Se ha detectado información compartida distinta a la de tu dispositivo.</span>
+				</div>
+				<div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+					<button id="btn-import-apply" class="text-xs px-4 py-1.5 rounded-full bg-amber-500 text-amber-950 font-bold hover:bg-amber-400 active:scale-95 transition-all cursor-pointer">
+						Actualizar mi Dispositivo
+					</button>
+					<button id="btn-import-discard" class="text-xs px-3 py-1.5 rounded-full bg-slate-950 text-slate-300 border border-slate-700 hover:bg-slate-800 active:scale-95 transition-all cursor-pointer">
+						Ignorar
+					</button>
+				</div>
+			</div>
+		</div>
+
 		<!-- Cabecera Principal -->
 		<header class="max-w-6xl mx-auto pt-8 px-4 text-center">
 			<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/50 border border-emerald-800/30 text-emerald-400 text-xs font-semibold mb-4 tracking-wider uppercase">
@@ -595,9 +613,74 @@ import Layout from '../layouts/Layout.astro';
 					const base64Data = hash.substring(7);
 					const decoded = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
 					if (decoded && Array.isArray(decoded.people) && decoded.rentTotal) {
-						state = decoded;
-						isLocked = true; // Siempre bloqueado por defecto si viene de URL
-						return;
+						const localStored = localStorage.getItem('airbnb_split_state');
+						if (localStored) {
+							// Comparar si el estado de la URL es distinto del local
+							if (JSON.stringify(decoded) !== localStored) {
+								// Mostrar banner para decidir si actualizar el dispositivo o ignorar
+								const importBanner = document.getElementById('import-banner');
+								if (importBanner) {
+									importBanner.classList.remove('hidden');
+									
+									// Listeners del banner de importación
+									const btnImportApply = document.getElementById('btn-import-apply');
+									const btnImportDiscard = document.getElementById('btn-import-discard');
+									
+									const applyHandler = () => {
+										state = decoded;
+										localStorage.setItem('airbnb_split_state', JSON.stringify(state));
+										importBanner.classList.add('hidden');
+										window.history.replaceState(null, "", window.location.pathname); // Quitar hash
+										render();
+										showToast("📬 Información guardada en tu dispositivo");
+										cleanup();
+									};
+									
+									const discardHandler = () => {
+										// Cargar el local
+										state = JSON.parse(localStored);
+										const isUnlockedSession = sessionStorage.getItem('airbnb_admin_unlocked') === 'true';
+										isLocked = !isUnlockedSession;
+										importBanner.classList.add('hidden');
+										window.history.replaceState(null, "", window.location.pathname); // Quitar hash
+										render();
+										checkLockState();
+										showToast("ℹ️ Cargado estado local guardado");
+										cleanup();
+									};
+									
+									const cleanup = () => {
+										btnImportApply.removeEventListener('click', applyHandler);
+										btnImportDiscard.removeEventListener('click', discardHandler);
+									};
+									
+									btnImportApply.addEventListener('click', applyHandler);
+									btnImportDiscard.addEventListener('click', discardHandler);
+								}
+								
+								// Cargamos temporalmente el de la URL para que lo previsualicen
+								state = decoded;
+								isLocked = true;
+								return;
+							} else {
+								// Si son idénticos, no hacemos nada y quitamos el hash para mantener limpia la URL
+								state = decoded;
+								isLocked = !sessionStorage.getItem('airbnb_admin_unlocked') === 'true';
+								window.history.replaceState(null, "", window.location.pathname);
+								return;
+							}
+						} else {
+							// No hay local, guardar de inmediato y limpiar URL
+							state = decoded;
+							isLocked = true;
+							localStorage.setItem('airbnb_split_state', JSON.stringify(state));
+							window.history.replaceState(null, "", window.location.pathname);
+							// Usar defer para el toast
+							setTimeout(() => {
+								showToast("📬 Información compartida guardada automáticamente");
+							}, 500);
+							return;
+						}
 					}
 				} catch (e) {
 					console.error("Error decodificando estado de URL:", e);
@@ -611,7 +694,6 @@ import Layout from '../layouts/Layout.astro';
 					const parsed = JSON.parse(stored);
 					if (parsed && Array.isArray(parsed.people)) {
 						state = parsed;
-						// Comprobar si ya estaba autenticado en la sesión actual
 						const isUnlockedSession = sessionStorage.getItem('airbnb_admin_unlocked') === 'true';
 						isLocked = !isUnlockedSession;
 						return;
@@ -626,10 +708,15 @@ import Layout from '../layouts/Layout.astro';
 			isLocked = true;
 		}
 
-		// Guardar localmente
+		// Guardar localmente y actualizar hash en tiempo real
 		function saveStateLocal() {
 			if (!isLocked) {
-				localStorage.setItem('airbnb_split_state', JSON.stringify(state));
+				const jsonStr = JSON.stringify(state);
+				localStorage.setItem('airbnb_split_state', jsonStr);
+				
+				// Actualizar URL hash en tiempo real
+				const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+				window.history.replaceState(null, "", `#state=${b64}`);
 			}
 		}
 
